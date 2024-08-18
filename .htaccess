@@ -1,0 +1,6 @@
+Options -MultiViews
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+Header add Strict-Transport-Security "Access-Control-Allow-Origin=*"
+Header add Strict-Transport-Security "Access-Control-Allow-Headers=*"
