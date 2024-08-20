@@ -1,15 +1,17 @@
 <?php
 
-include_once "./lib/router.php";
+namespace Bolt\Lib;
 
-class App
+use Bolt\Lib\Routing\{Router};
+
+class Bootstrap
 {
     static  string $name;
     static function run($options)
     {
-        App::$name = $options['name'];
+        Bootstrap::$name = $options['name'];
 
-        header("X-Powered-By: " . App::$name);
+        header("X-Powered-By: " . Bootstrap::$name);
         header("Access-Control-Allow-Origin: *");
         header("Access-Control-Allow-Headers: *");
         header('X-XSS-Protection: 1');

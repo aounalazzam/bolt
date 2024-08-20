@@ -1,5 +1,9 @@
 <?php
 
+namespace Bolt\Lib;
+
+use Bolt\Utils\{URL};
+
 class Sitemap
 {
     static function init()
@@ -11,12 +15,12 @@ class Sitemap
     static function generate(array $pages)
     {
 
-        $dom = new DOMDocument('1.0', 'UTF-8');
+        $dom = new \DOMDocument('1.0', 'UTF-8');
         $urlset = $dom->createElement('urlset');
         $urlset->setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9');
         $dom->appendChild($urlset);
 
-        $protocol = getServerProtocol();
+        $protocol = URL::getServerProtocol();
 
         foreach ($pages as $page) {
             $url = $dom->createElement('url');

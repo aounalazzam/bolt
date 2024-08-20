@@ -1,5 +1,7 @@
 <?php
 
+namespace Bolt\Lib\Routing;
+
 class Redirect
 {
     static function to(string $url): string

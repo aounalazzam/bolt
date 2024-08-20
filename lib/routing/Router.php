@@ -1,8 +1,6 @@
 <?php
-include_once "./utils/file.php";
-include_once "./lib/minify.php";
-include_once "./lib/templating.php";
-include_once "./lib/config.php";
+
+namespace Bolt\Lib\Routing;
 
 class Router
 {
@@ -39,8 +37,6 @@ class Router
             $regexPath = Router::pathToRegex($routePath);
             $isMatched = preg_match($regexPath, $url['path'], $matches);
 
-            // echo $routePath . " => " . $isMatched . "<br/>";
-
             if ($isMatched) {
                 $routeFound = true;
 
@@ -53,9 +49,8 @@ class Router
 
                 $fullPhpFilePath = self::$routesDirPath . $route;
 
-                // Static File
                 if (!str_contains($fullPhpFilePath, ".php")) {
-                    // TODO
+                    //  Handle static files
                     exit;
                 }
 

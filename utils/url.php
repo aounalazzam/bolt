@@ -1,13 +1,18 @@
 <?php
 
-function getServerProtocol()
+namespace Bolt\Utils;
+
+class URL
 {
-    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-}
+    static function getServerProtocol()
+    {
+        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    }
 
 
-function getBaseUrl()
-{
-    $protocol = getServerProtocol();
-    return "$protocol://{$_SERVER["HTTP_HOST"]}{$_SERVER['REQUEST_URI']}";
+    static function getBaseUrl()
+    {
+        $protocol = URL::getServerProtocol();
+        return "$protocol://{$_SERVER["HTTP_HOST"]}{$_SERVER['REQUEST_URI']}";
+    }
 }

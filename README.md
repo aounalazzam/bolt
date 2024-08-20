@@ -55,25 +55,30 @@ Modify the `index.php` file in the root of your project directory to include you
 
 ```php
 <?php
-session_start();
 
-include_once "./lib/db.php";
-include_once "./lib/app.php";
+require "./vendor/autoload.php";
+
+use Bolt\Utils\{Env};
+use Bolt\Lib\{Bootstrap};
+use Bolt\Lib\Database\{DatabaseConnection};
+
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_strict_mode', 1);
 
 DatabaseConnection::init([
-    "host" => env("DATABASE_HOST"),
-    "username" => env("DATABASE_USERNAME"),
-    "password" => env("DATABASE_PASSWORD"),
-    "database" => env("DATABASE_NAME"),
+    "host" => Env::get("DATABASE_HOST"),
+    "username" => Env::get("DATABASE_USERNAME"),
+    "password" => Env::get("DATABASE_PASSWORD"),
+    "database" => Env::get("DATABASE_NAME"),
 ]);
 
-App::run([
+Bootstrap::run([
     "name" => "YourAppName",
 ]);
 ```
 
 - `DatabaseConnection::init()` should be called with your MySQL credentials.
-- `App::run()` initializes your app, with the `name` appearing in the `Powered-By` header.
+- `Bootstrap::run()` initializes your app, with the `name` appearing in the `Powered-By` header.
 - CORS handling is built-in.
 
 ## Getting Started
@@ -85,17 +90,19 @@ Routing in Bolt is based on a file system directory structure. Create routes wit
 Create a route file like `routes/hello.php`:
 
 ```php
+use Bolt\Lib\Routing\{Route};
+
 $handleHello = function () {
     return [
         "message" => "Hello World!",
     ];
 };
 
-API::get($handleHello);
+Route::get($handleHello);
 ```
 
-- The `API::get()` method defines a GET request handler.
-- Similarly, `API::post()` is available for POST requests.
+- The `Route::get()` method defines a GET request handler.
+- Similarly, `Route::post()` is available for POST requests.
 - Both methods accept a validation schema array as an optional second parameter.
 
 ## Routing
@@ -133,13 +140,13 @@ When defining a route with validation, the second parameter in the `API::get()` 
 Here is a validation example for a POST request that handles a payment for coins:
 
 ```php
-API::post($handlePayForCoins, [
-    "amount" => [Types::integer, Required::true],
-    "coinsAmount" => [Types::integer, Required::true],
-    "name" => [Types::string, Required::true],
-    "email" => [Types::email, Required::true],
-    "gameName" => [Types::string, Required::true],
-    "origin" => [Types::string, Required::true],
+Route::post($handlePayForCoins, [
+    "amount" => [Types::integer(), Required::true()],
+    "coinsAmount" => [Types::integer(), Required::true()],
+    "name" => [Types::string(), Required::true()],
+    "email" => [Types::email(), Required::true()],
+    "gameName" => [Types::string(), Required::true(), Length::max(50)],
+    "origin" => [Types::string(), Required::true()],
 ]);
 ```
 
@@ -162,7 +169,7 @@ If the incoming request fails validation, Bolt will automatically return an erro
 To access the validated data within your route handler, you can use the `RouteRequestData` object provided in the handler function:
 
 ```php
-$handlePayForCoins = function (RouteRequestData $req) {
+$handlePayForCoins = function (RouteRequest $req) {
     $amount = $req->body['amount'];
     $coinsAmount = $req->body['coinsAmount'];
     $name = $req->body['name'];
@@ -191,6 +198,8 @@ Bolt offers powerful database interaction through models. Define your models in 
 #### Example
 
 ```php
+use Bolt\Lib\Database\{RecordOperations, Collection, CollectionTypes};
+
 class Database
 {
     static RecordOperations $users;
@@ -216,8 +225,10 @@ Database migrations will allow you to version your database schema changes progr
 Bolt simplifies file uploading with two dedicated functions:
 
 ```php
-function uploadFile($file): string
-function uploadImage($file): string
+use Bolt\Utils\{FileSystem};
+
+FileSystem::uploadFile($file): string
+FileSystem::uploadImage($file): string
 ```
 
 - `uploadFile()` uploads any file type.
@@ -232,7 +243,9 @@ Bolt provides various built-in libraries to streamline common tasks.
 Send emails with ease using `EmailSender::send()`:
 
 ```php
-EmailSender::send([
+use Bolt\Lib\{EmailSender};
+
+EmailSender::sendEmail([
     'to' => 'recipient@example.com',
     'subject' => 'Hello',
     'message' => 'This is a test email',
@@ -244,7 +257,10 @@ EmailSender::send([
 Perform HTTP requests using `HTTP::get()` and `HTTP::post()`:
 
 ```php
-$response = HTTP::post("https://api.example.com", $data);
+use Bolt\Lib\{HTTP};
+
+$response = HTTP::post("https://api.example.com", $data, $headers);
+$response = HTTP::get("https://api.example.com", $headers);
 ```
 
 ### Environment Variables
@@ -252,7 +268,9 @@ $response = HTTP::post("https://api.example.com", $data);
 Store sensitive data in a `.env` file and access them using the `env()` function:
 
 ```php
-$dbHost = env('DATABASE_HOST');
+use Bolt\Utils\{Env};
+
+$dbHost = Env::get('DATABASE_HOST');
 ```
 
 ### Errors & Exceptions
@@ -260,8 +278,14 @@ $dbHost = env('DATABASE_HOST');
 Bolt offers built-in error handling with predefined exceptions for common HTTP errors:
 
 ```php
+use Bolt\Utils\{ClientException, ...others};
+
 throw new ClientException("Client-side error");
+throw new ConflictException("Conflict error");
+throw new ForbiddenException("Forbidden error");
 throw new InternalServerErrorException("Server error");
+throw new NotFoundException("404 error");
+throw new UnauthorizedException("Unauthorized error");
 ```
 
 ### IP Handling
@@ -269,7 +293,9 @@ throw new InternalServerErrorException("Server error");
 Retrieve the client's IP address easily with:
 
 ```php
-$ip = getClientIP();
+use Bolt\Utils\{ClientIP};
+
+$ip = ClientIP::get();
 ```
 
 ### Sitemap Generation
@@ -277,6 +303,8 @@ $ip = getClientIP();
 Generate sitemaps with `Sitemap::generate()`:
 
 ```php
+use Bolt\Lib\{Sitemap};
+
 Sitemap::init();
 Sitemap::generate([
     ['loc' => "https://example.com", 'priority' => "0.8"],

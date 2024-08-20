@@ -1,5 +1,9 @@
 <?php
 
+namespace Bolt\Lib;
+
+use Bolt\Utils\{InternalServerErrorException};
+
 class EmailSender
 {
     static function sendEmail(array $options)
@@ -13,5 +17,18 @@ class EmailSender
         ];
 
         return mail($to, $subject, $content, implode("\r\n", $headers));
+    }
+
+    static function render(string $path): string
+    {
+        if (!file_exists($path)) {
+            throw new InternalServerErrorException("Template file not found: $path");
+        }
+
+        $content = file_get_contents($path);
+
+        ob_start();
+        eval("?>$content");
+        return ob_get_clean();
     }
 }

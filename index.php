@@ -1,16 +1,23 @@
 <?php
+
+require "./vendor/autoload.php";
+
+use Bolt\Utils\{Env};
+use Bolt\Lib\{Bootstrap};
+use Bolt\Lib\Database\{DatabaseConnection};
+
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_strict_mode', 1);
+
 session_start();
 
-include_once "./lib/db.php";
-include_once "./lib/app.php";
-
 DatabaseConnection::init([
-    "host" => env("DATABASE_HOST"),
-    "username" => env("DATABASE_USERNAME"),
-    "password" => env("DATABASE_PASSWORD"),
-    "database" => env("DATABASE_NAME"),
+    "host" =>  Env::get("DATABASE_HOST"),
+    "username" => Env::get("DATABASE_USERNAME"),
+    "password" =>  Env::get("DATABASE_PASSWORD"),
+    "database" =>  Env::get("DATABASE_NAME"),
 ]);
 
-App::run([
-    "name" => "",
+Bootstrap::run([
+    "name" => "Bolt",
 ]);

@@ -1,29 +1,32 @@
 <?php
 
-$environmentVariables = [];
+namespace Bolt\Utils;
 
-function env(string $name): mixed
+class Env
 {
-    global $environmentVariables;
+    private static $environmentVariables = [];
 
-    if (count($environmentVariables) > 0) {
-        return $environmentVariables[$name];
-    }
+    static function get(string $name): mixed
+    {
+        if (count(Env::$environmentVariables) > 0) {
+            return Env::$environmentVariables[$name];
+        }
 
-    $envFile = './.env';
+        $envFile = './.env';
 
-    if (file_exists($envFile)) {
-        $envContent = file_get_contents($envFile);
-        $envLines = explode("\n", $envContent);
+        if (file_exists($envFile)) {
+            $envContent = file_get_contents($envFile);
+            $envLines = explode("\n", $envContent);
 
-        foreach ($envLines as $line) {
-            $line = trim($line);
-            if (!empty($line) && strpos($line, '=') !== false) {
-                [$envName, $envValue] = explode('=', $line, 2);
-                $environmentVariables[$envName] = str_replace(['\'', '"'], '', $envValue);
+            foreach ($envLines as $line) {
+                $line = trim($line);
+                if (!empty($line) && strpos($line, '=') !== false) {
+                    [$envName, $envValue] = explode('=', $line, 2);
+                    Env::$environmentVariables[$envName] = str_replace(['\'', '"'], '', $envValue);
+                }
             }
         }
-    }
 
-    return $environmentVariables[$name] ?? "";
+        return Env::$environmentVariables[$name] ?? "";
+    }
 }

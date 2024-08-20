@@ -1,6 +1,6 @@
 <?php
 
-include_once "./lib/models.php";
+use Bolt\Lib\Database\{RecordOperations, Collection, CollectionTypes};
 
 class Database
 {
@@ -21,5 +21,5 @@ try {
     */
 } catch (Exception $e) {
     echo $e->getMessage();
-    exit;
+    die;
 }

@@ -1,0 +1,21 @@
+{
+  "name": "adminspace/api",
+  "description": "API For Adminspace App",
+  "version": "1.0.0",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Aoun Alazzam",
+      "email": "aounalazzam7@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Bolt\\Lib\\": "lib/",
+      "Bolt\\Lib\\Routing\\": "lib/routing/",
+      "Bolt\\Lib\\Validator\\": "lib/validator/",
+      "Bolt\\Lib\\Database\\": "lib/database/",
+      "Bolt\\Utils\\": "utils/"
+    }
+  }
+}

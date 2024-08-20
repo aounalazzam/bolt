@@ -1,13 +1,9 @@
 <?php
 
-include_once "./lib/db.php";
-include_once "./utils/time.php";
+namespace Bolt\Lib\Database;
 
-function makeValidSqlString($value)
-{
-    return "'" . mysqli_real_escape_string($GLOBALS['conn'], $value) . "'";
-}
-
+use Bolt\Utils\{UnixTime};
+use Bolt\Lib\Database\{SQL};
 
 class RecordOperations
 {
@@ -18,14 +14,19 @@ class RecordOperations
         $this->tableName = $tableName;
     }
 
+    private function makeValidSqlString($value)
+    {
+        return "'" . mysqli_real_escape_string($GLOBALS['conn'], $value) . "'";
+    }
+
     function create(array $data): int|string
     {
-        $data['created'] = getTime();
-        $data['updated'] = getTime();
+        $data['created'] = UnixTime::getCurrentTimeByMiliseconds();
+        $data['updated'] = UnixTime::getCurrentTimeByMiliseconds();
         $columns = implode(", ", array_keys($data));
         $values = implode(", ", array_map(function ($value) {
             $type = gettype($value);
-            return $type === "string" ? makeValidSqlString($value) : ($type === "array" ? makeValidSqlString(json_encode($value)) : $value);
+            return $type === "string" ? $this->makeValidSqlString($value) : ($type === "array" ? $this->makeValidSqlString(json_encode($value)) : $value);
         }, $data));
 
         SQL::run(
@@ -61,11 +62,11 @@ class RecordOperations
     {
         foreach ($data as $key => $value) {
             $type = gettype($value);
-            $parsedValue = $type === "string" ? makeValidSqlString($value) : ($type === "array" ? makeValidSqlString(json_encode($value, true)) : $value);
+            $parsedValue = $type === "string" ? $this->makeValidSqlString($value) : ($type === "array" ? $this->makeValidSqlString(json_encode($value, true)) : $value);
             SQL::run("UPDATE `{$this->tableName}` SET $key = $parsedValue WHERE id = $id");
         }
 
-        $ti = getTime();
+        $ti = UnixTime::getCurrentTimeByMiliseconds();
 
         SQL::run("UPDATE `{$this->tableName}` SET updated = $ti WHERE id = $id");
         return true;

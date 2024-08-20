@@ -1,5 +1,7 @@
 <?php
 
+namespace Bolt\Lib;
+
 class HTTP
 {
     static function post(string $url,  $data = null, $headers = []): array
