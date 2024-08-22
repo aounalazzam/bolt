@@ -16,16 +16,19 @@ class RecordOperations
 
     private function makeValidSqlString($value)
     {
-        return "'" . mysqli_real_escape_string($GLOBALS['conn'], $value) . "'";
+        return "'" . mysqli_real_escape_string(DatabaseConnection::getConnection(), $value) . "'";
     }
 
-    function create(array $data): int|string
+    function create(array $data): array
     {
-        $data['created'] = UnixTime::getCurrentTimeByMiliseconds();
-        $data['updated'] = UnixTime::getCurrentTimeByMiliseconds();
+        $data['created'] = UnixTime::getCurrentTimeByMilliseconds();
+        $data['updated'] = UnixTime::getCurrentTimeByMilliseconds();
         $columns = implode(", ", array_keys($data));
         $values = implode(", ", array_map(function ($value) {
             $type = gettype($value);
+
+            // Do Validation
+
             return $type === "string" ? $this->makeValidSqlString($value) : ($type === "array" ? $this->makeValidSqlString(json_encode($value)) : $value);
         }, $data));
 
@@ -33,29 +36,35 @@ class RecordOperations
             "INSERT INTO  `{$this->tableName}` ($columns) values ($values)"
         );
 
-        return SQL::lastInsertId();
-    }
+        $id = SQL::lastInsertId();
 
-    function getOne(string $filter): array|null
-    {
-        return SQL::run("SELECT * FROM `{$this->tableName}` WHERE $filter LIMIT 1", true);
-    }
-
-    function getById(string $id): array|null
-
-    {
         return SQL::run("SELECT * FROM `{$this->tableName}` WHERE id = $id", true);
     }
 
-    function getList(int $limit, int $offset = 0): array
+    function getOne(string $filter, string $fields = "*"): array|null
     {
-        return SQL::run("SELECT * FROM `{$this->tableName}` LIMIT {$limit}" . ($offset > 0 ? " OFFSET {$offset}" : ""));
+        return SQL::run("SELECT {$fields} FROM `{$this->tableName}` WHERE $filter LIMIT 1", true);
     }
 
+    function getById(string $id, string $fields = "*"): array|null
 
-    function getAll(): array
     {
-        return SQL::run("SELECT * FROM `{$this->tableName}`");
+        return SQL::run("SELECT {$fields} FROM `{$this->tableName}` WHERE id = $id", true);
+    }
+
+    function getList(int $limit, int $offset = 0, string $fields = "*"): array
+    {
+        return SQL::run("SELECT {$fields} FROM `{$this->tableName}` LIMIT {$limit}" . ($offset > 0 ? " OFFSET {$offset}" : ""));
+    }
+
+    function getFilteredList(string $filter, string $fields = "*"): array
+    {
+        return SQL::run("SELECT {$fields} FROM `{$this->tableName}` WHERE {$filter}");
+    }
+
+    function getAll(string $fields = "*"): array
+    {
+        return SQL::run("SELECT {$fields} FROM `{$this->tableName}`");
     }
 
     function update(string $id, array $data): true
@@ -66,7 +75,7 @@ class RecordOperations
             SQL::run("UPDATE `{$this->tableName}` SET $key = $parsedValue WHERE id = $id");
         }
 
-        $ti = UnixTime::getCurrentTimeByMiliseconds();
+        $ti = UnixTime::getCurrentTimeByMilliseconds();
 
         SQL::run("UPDATE `{$this->tableName}` SET updated = $ti WHERE id = $id");
         return true;

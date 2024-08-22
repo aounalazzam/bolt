@@ -22,7 +22,7 @@ class HTTP
         );
 
         if ($data) {
-            $options[CURLOPT_POSTFIELDS] = is_array($data) ? json_encode($data) : $data;
+            $options[CURLOPT_POSTFIELDS] = $data;
         };
 
         curl_setopt_array($curl, $options);

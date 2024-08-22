@@ -2,14 +2,12 @@
 
 namespace Bolt\Lib\Database;
 
+use Bolt\Utils\ServerErrorException;
+
 class DatabaseConnection
 {
-    static \mysqli $mySQLConnection;
+    private static \mysqli|null $mySQLConnection = null;
 
-    static function getConnection(): \mysqli
-    {
-        return  self::$mySQLConnection;
-    }
     static function init(array $options)
     {
         [
@@ -19,14 +17,15 @@ class DatabaseConnection
             'database' => $dbname
         ] = $options;
 
-        try {
-            self::$mySQLConnection = mysqli_connect($servername, $username, $password, $dbname);
+        self::$mySQLConnection = mysqli_connect($servername, $username, $password, $dbname) ?? null;
 
-            if (!self::$mySQLConnection) {
-                error_log("Connection failed: " . mysqli_connect_error());
-            }
-        } catch (\Throwable $th) {
-            error_log($th->getMessage());
+        if (!self::$mySQLConnection) {
+            throw ServerErrorException::InternalServerError("Connection failed: " . mysqli_connect_error());
         }
+    }
+
+    static function getConnection(): \mysqli|null
+    {
+        return self::$mySQLConnection;
     }
 }

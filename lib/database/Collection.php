@@ -12,7 +12,6 @@ class Collection
             "updated BIGINT NOT NULL",
         ];
 
-
         foreach ($schema as $key => $value) {
 
             [

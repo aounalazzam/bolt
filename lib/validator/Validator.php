@@ -2,7 +2,7 @@
 
 namespace Bolt\Lib\Validator;
 
-use Bolt\Utils\{ClientException};
+use Bolt\Utils\ServerErrorException;
 
 class Validator
 {
@@ -12,7 +12,7 @@ class Validator
 
         foreach ($schema as $key => $values) {
             for ($i = 0; $i < count($values); $i++) {
-                [$idKey, $idVal] = explode("_", $values[$i]->value);
+                [$idKey, $idVal] = explode("_", $values[$i]);
                 $parsedValidationSchema[$key][$idKey] = $idVal;
             }
         }
@@ -30,7 +30,7 @@ class Validator
             if (
                 $required && !(isset($data[$key]) || ($isFile && isset($_FILES[$key])))
             ) {
-                throw new ClientException("data/$key/required");
+                throw ServerErrorException::BadRequest("data/$key/required");
             }
 
             if (!$required && !isset($data[$key])) {
@@ -72,7 +72,7 @@ class Validator
             }
 
             if (!$isMatchedType) {
-                throw new ClientException("data/$key/invalid");
+                throw ServerErrorException::BadRequest("data/$key/invalid");
             }
 
 
@@ -80,29 +80,29 @@ class Validator
             if ($maxLength !== null) {
                 // String
                 if ($currentType === "string" && strlen($val) > $maxLength) {
-                    throw new ClientException("data/$key/length/over");
+                    throw ServerErrorException::BadRequest("data/$key/length/over");
                 }
                 // Array
                 else if ($currentType === "array" && count($val) > $maxLength) {
-                    throw new ClientException("data/$key/length/over");
+                    throw ServerErrorException::BadRequest("data/$key/length/over");
                 }
                 // Number
                 else if (($currentType === "integer" || $currentType === "double") && $val > $maxLength) {
-                    throw new ClientException("data/$key/length/over");
+                    throw ServerErrorException::BadRequest("data/$key/length/over");
                 }
             }
             if ($minLength !== null) {
                 // String
                 if ($currentType === "string" && strlen($val) < $minLength) {
-                    throw new ClientException("data/$key/length/less");
+                    throw ServerErrorException::BadRequest("data/$key/length/less");
                 }
                 // Array
                 else if ($currentType === "array" && count($val) < $minLength) {
-                    throw new ClientException("data/$key/length/less");
+                    throw ServerErrorException::BadRequest("data/$key/length/less");
                 }
                 // Number
                 else if (($currentType === "integer" || $currentType === "double") && $val < $minLength) {
-                    throw new ClientException("data/$key/length/less");
+                    throw ServerErrorException::BadRequest("data/$key/length/less");
                 }
             }
         }

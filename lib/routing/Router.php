@@ -25,8 +25,6 @@ class Router
         $url = Router::getPathUrl();
         $routes = Router::getRoutes(self::$routesDirPath);
 
-        Router::runMiddleware();
-
         $routeFound = false;
 
         // Handle Sitemap.xml by php
@@ -61,16 +59,9 @@ class Router
 
         // Handle 404 Page Not Found
         if (!$routeFound) {
-            header('HTTP/1.1 404 Not Found');
-        }
-    }
-
-    static function runMiddleware()
-    {
-        $middlewarePath = "./middleware/index.php";
-
-        if (file_exists($middlewarePath)) {
-            include_once $middlewarePath;
+            header("Content-type: application/json");
+            http_response_code(404);
+            exit;
         }
     }
 

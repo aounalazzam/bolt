@@ -2,12 +2,15 @@
 
 namespace Bolt\Lib\Routing;
 
-use Bolt\Utils\{ClientException, UnauthorizedException, ForbiddenException, NotFoundException, ConflictException, InternalServerErrorException};
 use Bolt\Lib\Routing\{RouteRequest};
-use Bolt\Lib\Validator\{Validator};
+use Bolt\Utils\{ServerErrorException};
 
 class Route
 {
+    private static RouteRequest $routeRequest;
+    private static array $middlewareCallbacks;
+
+
     private static function writeJSONResponse($data, $statusCode = 200)
     {
         header("Content-type: application/json");
@@ -16,7 +19,7 @@ class Route
         die;
     }
 
-    private static function createAPIRouteHandler(string $methodName, callable $handler, array $validationSchemaInputs): void
+    private static function createAPIRouteHandler(string $methodName, callable $handler): void
     {
         if (
             !($_SERVER['REQUEST_METHOD'] === $methodName)
@@ -24,47 +27,21 @@ class Route
             return;
         }
 
-        $requestedBody = [];
-        $requestedQuery = $_GET;
-
-        if ($methodName === "POST") {
-            $RAW_POST_DATA = json_decode(file_get_contents('php://input'), true);
-            $requestedBody = (count($_POST) > 0) ? $_POST : $RAW_POST_DATA;
-        }
-
         try {
-            if (count($validationSchemaInputs) > 0) {
-                $validationSchema = [];
+            self::$middlewareCallbacks ??= [];
 
-                foreach ($validationSchemaInputs as $key => $values) {
-                    for ($i = 0; $i < count($values); $i++) {
-                        [$idKey, $idVal] = explode("_", $values[$i]->value);
-                        $validationSchema[$key][$idKey] = $idVal;
-                    }
-                }
-
-                if ($methodName === "POST") {
-                    Validator::validateSchema($validationSchema, $requestedBody);
-                }
-
-                if ($methodName === "GET") {
-                    Validator::validateSchema($validationSchema, $requestedQuery);
-                }
+            foreach (self::$middlewareCallbacks as $callback) {
+                $callback(self::$routeRequest);
             }
 
-            $routeRequestData = new RouteRequest([
-                'body' => $requestedBody,
-                'query' => $requestedQuery
-            ]);
-
-            $res = $handler($routeRequestData);
+            $res = $handler(self::$routeRequest);
 
             if (gettype($res) === "string") {
                 if ($res === "redirect") exit;
             } else {
                 Route::writeJSONResponse($res);
             }
-        } catch (ClientException | UnauthorizedException | ForbiddenException | NotFoundException | ConflictException | InternalServerErrorException $th) {
+        } catch (ServerErrorException $th) {
             Route::writeJSONResponse([
                 "message" => $th->getMessage(),
             ], $th->getCode());
@@ -75,13 +52,28 @@ class Route
         }
     }
 
+    static function use(callable $callback): Route
+    {
+        self::$middlewareCallbacks[] = $callback;
+
+        return new self;
+    }
+
     static function post(callable $handler, array $validationSchema = []): void
     {
-        Route::createAPIRouteHandler("POST", $handler, $validationSchema);
+        self::$routeRequest = new RouteRequest();
+
+        self::$routeRequest->validate($validationSchema);
+
+        Route::createAPIRouteHandler("POST", $handler);
     }
 
     static function get(callable $handler, array $validationSchema = []): void
     {
-        Route::createAPIRouteHandler("GET", $handler, $validationSchema);
+        self::$routeRequest = new RouteRequest();
+
+        self::$routeRequest->validate($validationSchema);
+
+        Route::createAPIRouteHandler("GET", $handler);
     }
 }

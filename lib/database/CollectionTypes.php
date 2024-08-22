@@ -32,6 +32,15 @@ class CollectionTypes
         ];
     }
 
+    static function url(): array
+    {
+        return [
+            "type" => "json",
+            "length" => null,
+            "nullable" => false
+        ];
+    }
+
     static function array(mixed $nullable = false): array
     {
         return [

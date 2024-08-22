@@ -2,11 +2,18 @@
 
 namespace Bolt\Lib\Database;
 
+use Bolt\Utils\ServerErrorException;
+
 class SQL
 {
     static function run(string $sqlQuery, $expectedReturnOneItem = false): ?array
     {
         $conn = DatabaseConnection::getConnection();
+
+        if (!$conn) {
+            throw ServerErrorException::InternalServerError('Database connection failed');
+        }
+
         $result = $conn->query($sqlQuery);
         $data = [];
 
@@ -46,8 +53,7 @@ class SQL
 
     static function lastInsertId(): int|string
     {
-        global $conn;
+        $conn = DatabaseConnection::getConnection();
         return mysqli_insert_id($conn);
     }
 }
-

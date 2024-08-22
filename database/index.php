@@ -1,6 +1,14 @@
 <?php
 
-use Bolt\Lib\Database\{RecordOperations, Collection, CollectionTypes};
+use Bolt\Utils\{Env};
+use Bolt\Lib\Database\{DatabaseConnection, RecordOperations, Collection, CollectionTypes};
+
+DatabaseConnection::init([
+    "host" =>  Env::get("DATABASE_HOST"),
+    "username" => Env::get("DATABASE_USERNAME"),
+    "password" =>  Env::get("DATABASE_PASSWORD"),
+    "database" =>  Env::get("DATABASE_NAME"),
+]);
 
 class Database
 {

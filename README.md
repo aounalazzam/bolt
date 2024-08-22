@@ -127,13 +127,48 @@ return Redirect::to("/new-url");
 
 ### Middleware
 
-Bolt supports middleware by default. Middleware files should be placed in the `middleware/` directory. The file `middleware/index.php` has the highest priority. Middleware can modify requests before they reach route handlers.
+Bolt supports middleware by default. Middleware files should be placed in the `middleware/` directory and import it at any route file and use `use` function from `Route` and add your function follow this example to know more
 
+```php
+
+use Bolt\Lib\Routing\{RouteRequest};
+use Bolt\Utils\ServerErrorException;
+
+$authVerifyOwner = function (RouteRequest $req) {
+    $userId = $_SESSION['owner-user-id'] ?? null;
+
+    if (!$userId) {
+        throw ServerErrorException::Unauthorized("Can not access this resource");
+    }
+};
+
+```
+
+```php
+...
+
+Route::use($authVerifyOwner)::post($handleCreateEmployee, [
+    "name" => [Types::string(), Required::true(), Length::max(50)],
+    "role" => [Types::string(), Required::true(), Length::max(50)],
+    "employmentDate" => [Types::string(), Required::true(), Length::max(50)],
+    ...
+]);
+
+...
+```
+
+Code Explain
+
+- `Route::use` this function register the middleware then not run it, is validate first the schema then run middleware callbacks then run the handler function the timeline of route execution it like this:
+  - Validate Schema Of Route If Available
+  - Run Middlewares Callbacks
+  - Run Route Handler Function
+w
 ### Validation
 
 Bolt includes a powerful and flexible validation system that ensures incoming data adheres to the expected structure. Validation in Bolt is applied directly to the route handler and works with both GET and POST requests.
 
-When defining a route with validation, the second parameter in the `API::get()` or `API::post()` method is an array of validation rules. Each key in the array corresponds to a field that is expected in the request, and the value is an array that defines the data type and any other validation requirements.
+When defining a route with validation, the second parameter in the `Route::get()` or `Route::post()` method is an array of validation rules. Each key in the array corresponds to a field that is expected in the request, and the value is an array that defines the data type and any other validation requirements.
 
 #### Example
 
@@ -225,14 +260,28 @@ Database migrations will allow you to version your database schema changes progr
 Bolt simplifies file uploading with two dedicated functions:
 
 ```php
-use Bolt\Utils\{FileSystem};
+use Bolt\Utils\{FileUpload};
 
-FileSystem::uploadFile($file): string
-FileSystem::uploadImage($file): string
+FileUpload::upload(array $file, array $allowedExtensions = [], int $maxFileSize = 10485760): string
 ```
 
-- `uploadFile()` uploads any file type.
-- `uploadImage()` validates the file as an image before uploading.
+- `uploadFile()` uploads any file type with extension and size validation and the default upload dir is `./uploads`
+
+if you want to make your own max file size limit for all files use this function at `index.php` file.
+
+```php
+...
+FileUpload::setMaxFileSize(int $maxFileSize) // $maxFileSize in bytes
+...
+```
+
+if you want to change the default upload dir use this function at `index.php` file.
+
+```php
+...
+FileUpload::setUploadDir(string $uploadDirPath)
+...
+```
 
 ## Libraries
 
@@ -278,15 +327,17 @@ $dbHost = Env::get('DATABASE_HOST');
 Bolt offers built-in error handling with predefined exceptions for common HTTP errors:
 
 ```php
-use Bolt\Utils\{ClientException, ...others};
+use Bolt\Utils\{ServerErrorException};
 
-throw new ClientException("Client-side error");
-throw new ConflictException("Conflict error");
-throw new ForbiddenException("Forbidden error");
-throw new InternalServerErrorException("Server error");
-throw new NotFoundException("404 error");
-throw new UnauthorizedException("Unauthorized error");
+throw ServerErrorException::BadRequest("Client-side error");
+throw ServerErrorException::Conflict("Conflict error");
+throw ServerErrorException::Forbidden("Forbidden error");
+throw ServerErrorException::InternalServerError("Server error");
+throw ServerErrorException::NotFound("404 error");
+throw ServerErrorException::Unauthorized("Unauthorized error");
 ```
+
+Note: there are all 4xx and 5xx errors.
 
 ### IP Handling
 
