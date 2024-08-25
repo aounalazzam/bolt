@@ -34,6 +34,8 @@ Welcome to **Bolt**, a fast and powerful PHP API framework designed to streamlin
     - [IP Handling](#ip-handling)
     - [Sitemap Generation](#sitemap-generation)
 
+This structure will make navigating the documentation easier for readers!
+
 ## Installation
 
 To get started with **Bolt**, clone the repository and follow the instructions below:
