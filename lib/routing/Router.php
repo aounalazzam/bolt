@@ -45,21 +45,22 @@ class Router
                 ];
                 Router::$queryParams = $url['query'];
 
-                $fullPhpFilePath = self::$routesDirPath . $route;
+                $fullFilePath = self::$routesDirPath . $route;
 
-                if (!str_contains($fullPhpFilePath, ".php")) {
-                    //  Handle static files
+                if (!str_contains($fullFilePath, ".php")) {
+                    $mimeType = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $fullFilePath);
+                    header("Content-Type: {$mimeType}");
+                    echo file_get_contents($fullFilePath);
                     exit;
                 }
 
-                include_once $fullPhpFilePath;
+                include_once $fullFilePath;
                 exit;
             }
         }
 
         // Handle 404 Page Not Found
         if (!$routeFound) {
-            header("Content-type: application/json");
             http_response_code(404);
             exit;
         }
@@ -123,7 +124,7 @@ class Router
     static private function pathToRegex($path)
     {
         $regex = preg_replace("/\//", "\\/", $path);
-        $regex = preg_replace("/\[\w+\]/", "(.+)", $regex);
+        $regex = preg_replace("/\[.+?\]/", "(.+)", $regex);
         return "/^" . str_replace(" ", "", $regex) . "$/i";
     }
 }

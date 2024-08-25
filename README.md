@@ -21,6 +21,9 @@ Welcome to **Bolt**, a fast and powerful PHP API framework designed to streamlin
   - [Database](#database)
     - [Models](#models)
       - [Example](#example-1)
+  - [Functions](#functions)
+    - [Example](#example-2)
+    - [Realtime Database](#realtime-database)
     - [Migrations](#migrations)
   - [File Uploading](#file-uploading)
   - [Libraries](#libraries)
@@ -54,8 +57,6 @@ Ensure your project structure includes the essential files and directories:
 Modify the `index.php` file in the root of your project directory to include your configuration and initialize the application:
 
 ```php
-<?php
-
 require "./vendor/autoload.php";
 
 use Bolt\Utils\{Env};
@@ -163,7 +164,8 @@ Code Explain
   - Validate Schema Of Route If Available
   - Run Middlewares Callbacks
   - Run Route Handler Function
-w
+    w
+
 ### Validation
 
 Bolt includes a powerful and flexible validation system that ensures incoming data adheres to the expected structure. Validation in Bolt is applied directly to the route handler and works with both GET and POST requests.
@@ -243,11 +245,91 @@ class Database
 Database::$users = Collection::create("users", [
     "username" => CollectionTypes::string(length:50, nullable:true, default:''),
     "age" => CollectionTypes::number(),
-    "created_at" => CollectionTypes::timestamp(),
 ]);
 ```
 
-- **CRUD Operations**: Easily perform Create, Read, Update, Delete operations with predefined methods such as `create()`, `getOne()`, `update()`, and `delete()`.
+## Functions
+
+With You Access A RecordOperations class there is some function help you to do crud operations with php instead of writing sql code
+
+```php
+function innerJoin(string $joinTable,string $onCondition,string $fields = "*",string $filter = null,int $limit = null,int $offset = 0): array
+function leftJoin(string $joinTable,string $onCondition,string $fields = "*",string $filter = null,int $limit = null,int $offset = 0): array
+function fullJoin(string $joinTable,string $onCondition,string $fields = "*",string $filter = null,int $limit = null,int $offset = 0): array
+function create(array $data): array
+function getOne(string $filter, string $fields = "*"): array|null
+function getById(string $id, string $fields = "*"): array|null
+function getList(int $limit, int $offset = 0, string $fields = "*"): array
+function getFilteredList(string $filter, string $fields = "*"): array
+function getAll(string $fields = "*"): array
+function update(string $id, array $data): true
+function updateByFilter(string $filter, array $data): true
+function delete(string $id): true
+function deleteList(string $filter): true
+```
+
+#### Example
+
+- Basic Code Example With CRUD Operations
+
+```php
+// Create Row
+$user = Database::$users->create(["username" => "jack","age"=> 30]);
+// $user = [
+//     "id" => "1",
+//     "username" => "jack",
+//     "age" => 30,
+//     "created" => 17589546,
+//     "updated" => 17589546,
+// ]
+// Update Row
+Database::$users->update($user['id'], ["username" => "michel"]);
+Database::$users->updateByFilter("username = 'jack'", ["username" => "michel"]);
+// Get User
+Database::$users->getById($user['id']);
+Database::$users->getOne("username = 'michel'");
+// Get All Users
+Database::$users->getAll();
+// Delete User
+Database::$users->delete($user['id']);
+...more
+```
+
+### Realtime Database
+
+To Get Update Notifications When Data of Table/Record Changed This is Using SSE (Server-Sent-Events)
+
+For Table
+
+```php
+include_once "./database/index.php";
+
+use Bolt\Lib\Database\{RealtimeDatabase};
+
+RealtimeDatabase::init();
+
+RealtimeDatabase::listenTable(Database::$apps);
+```
+
+For Record
+
+```php
+include_once "./database/index.php";
+
+use Bolt\Lib\Database\{RealtimeDatabase};
+
+[$id] = Router::getParams();
+
+RealtimeDatabase::init();
+
+RealtimeDatabase::listenRecord($id, Database::$apps);
+```
+
+Code Explain
+
+- `RealtimeDatabase::init` Telling PHP This File Will Be SSE Content-Type With SSE Configuration To Start
+- `RealtimeDatabase::listenRecord` Listen Changes To Specific Record If Data Changes In Row Will Throw `{"action":"update"}`
+- `RealtimeDatabase::listen` Listen Changes To All Table If Data Changes In Any Record In Table Will Throw `{"action":"update"}`
 
 ### Migrations
 

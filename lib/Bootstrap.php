@@ -2,7 +2,7 @@
 
 namespace Bolt\Lib;
 
-use Bolt\Lib\Routing\{Router};
+use Bolt\Lib\Routing\{Router, StaticRouter};
 
 class Bootstrap
 {
@@ -19,5 +19,6 @@ class Bootstrap
         header('X-Content-Type-Options: nosniff');
 
         Router::run();
+        StaticRouter::run();
     }
 }

@@ -19,6 +19,73 @@ class RecordOperations
         return "'" . mysqli_real_escape_string(DatabaseConnection::getConnection(), $value) . "'";
     }
 
+    private function join(
+        string $joinType,
+        string $joinTable,
+        string $onCondition,
+        string $fields = "*",
+        string $filter = null,
+        int $limit = null,
+        int $offset = 0
+    ): array {
+        $joinType = strtoupper($joinType);
+        $query = "SELECT {$fields} FROM `{$this->tableName}` {$joinType} JOIN `{$joinTable}` ON {$onCondition}";
+
+        if (!is_null($filter)) {
+            $query .= " WHERE {$filter}";
+        }
+
+        if (!is_null($limit)) {
+            $query .= " LIMIT {$limit}" . ($offset > 0 ? " OFFSET {$offset}" : "");
+        }
+
+        return SQL::run($query);
+    }
+
+    function innerJoin(
+        string $joinTable,
+        string $onCondition,
+        string $fields = "*",
+        string $filter = null,
+        int $limit = null,
+        int $offset = 0
+    ): array {
+        return $this->join('INNER', $joinTable, $onCondition, $fields, $filter, $limit, $offset);
+    }
+
+    function leftJoin(
+        string $joinTable,
+        string $onCondition,
+        string $fields = "*",
+        string $filter = null,
+        int $limit = null,
+        int $offset = 0
+    ): array {
+        return $this->join('LEFT', $joinTable, $onCondition, $fields, $filter, $limit, $offset);
+    }
+
+    function rightJoin(
+        string $joinTable,
+        string $onCondition,
+        string $fields = "*",
+        string $filter = null,
+        int $limit = null,
+        int $offset = 0
+    ): array {
+        return $this->join('RIGHT', $joinTable, $onCondition, $fields, $filter, $limit, $offset);
+    }
+
+    function fullJoin(
+        string $joinTable,
+        string $onCondition,
+        string $fields = "*",
+        string $filter = null,
+        int $limit = null,
+        int $offset = 0
+    ): array {
+        return $this->join('FULL', $joinTable, $onCondition, $fields, $filter, $limit, $offset);
+    }
+
     function create(array $data): array
     {
         $data['created'] = UnixTime::getCurrentTimeByMilliseconds();
@@ -78,6 +145,20 @@ class RecordOperations
         $ti = UnixTime::getCurrentTimeByMilliseconds();
 
         SQL::run("UPDATE `{$this->tableName}` SET updated = $ti WHERE id = $id");
+        return true;
+    }
+
+    function updateByFilter(string $filter, array $data): true
+    {
+        foreach ($data as $key => $value) {
+            $type = gettype($value);
+            $parsedValue = $type === "string" ? $this->makeValidSqlString($value) : ($type === "array" ? $this->makeValidSqlString(json_encode($value, true)) : $value);
+            SQL::run("UPDATE `{$this->tableName}` SET $key = $parsedValue WHERE $filter");
+        }
+
+        $ti = UnixTime::getCurrentTimeByMilliseconds();
+
+        SQL::run("UPDATE `{$this->tableName}` SET updated = $ti WHERE $filter");
         return true;
     }
 

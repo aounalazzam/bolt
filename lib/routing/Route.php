@@ -11,15 +11,28 @@ class Route
     private static array $middlewareCallbacks;
 
 
-    private static function writeJSONResponse($data, $statusCode = 200)
+    private static function writeResponse(mixed $data, int $statusCode, string $contentType)
     {
-        header("Content-type: application/json");
+        header("Content-type: $contentType");
         http_response_code($statusCode);
-        echo json_encode($data);
-        die;
+        echo $data;
+        exit;
     }
 
-    private static function createAPIRouteHandler(string $methodName, callable $handler): void
+    private static function writeJSONResponse(array|null $data, bool $success = true, int $statusCode = 200, string|null $message = null)
+    {
+        self::writeResponse(
+            json_encode([
+                "data" => $data,
+                "success" => $success,
+                "message" => $message
+            ]),
+            $statusCode,
+            "application/json"
+        );
+    }
+
+    private static function createAPIRouteHandler(string $methodName, callable $handler, string $contentType): void
     {
         if (
             !($_SERVER['REQUEST_METHOD'] === $methodName)
@@ -32,23 +45,21 @@ class Route
 
             foreach (self::$middlewareCallbacks as $callback) {
                 $callback(self::$routeRequest);
-            }
+            } 
 
             $res = $handler(self::$routeRequest);
 
-            if (gettype($res) === "string") {
-                if ($res === "redirect") exit;
+            if ($contentType === "application/json") {
+                $message = $res['message'] ?? null;
+                unset($res['message']);
+                Route::writeJSONResponse($res, true, 200, $message);
             } else {
-                Route::writeJSONResponse($res);
+                Route::writeResponse($res, 200, $contentType);
             }
         } catch (ServerErrorException $th) {
-            Route::writeJSONResponse([
-                "message" => $th->getMessage(),
-            ], $th->getCode());
+            Route::writeJSONResponse(null, false, $th->getCode(), $th->getMessage());
         } catch (\Throwable $th) {
-            Route::writeJSONResponse([
-                "message" => $th->getMessage(),
-            ], 500);
+            Route::writeJSONResponse(null, false, 500, $th->getMessage());
         }
     }
 
@@ -59,21 +70,30 @@ class Route
         return new self;
     }
 
-    static function post(callable $handler, array $validationSchema = []): void
+    static function stream(callable $handler, string $contentType, array $validationSchema = []): void
     {
         self::$routeRequest = new RouteRequest();
 
         self::$routeRequest->validate($validationSchema);
 
-        Route::createAPIRouteHandler("POST", $handler);
+        Route::createAPIRouteHandler("GET", $handler, $contentType);
     }
 
-    static function get(callable $handler, array $validationSchema = []): void
+    static function post(callable $handler, array $validationSchema = [], string $contentType = "application/json"): void
     {
         self::$routeRequest = new RouteRequest();
 
         self::$routeRequest->validate($validationSchema);
 
-        Route::createAPIRouteHandler("GET", $handler);
+        Route::createAPIRouteHandler("POST", $handler, $contentType);
+    }
+
+    static function get(callable $handler, array $validationSchema = [], string $contentType = "application/json"): void
+    {
+        self::$routeRequest = new RouteRequest();
+
+        self::$routeRequest->validate($validationSchema);
+
+        Route::createAPIRouteHandler("GET", $handler, $contentType);
     }
 }
