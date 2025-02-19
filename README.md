@@ -1,3 +1,7 @@
+> [!WARNING]
+> Please keep in mind that Bolt is fun project and therefore 
+> full backward compatibility is not guaranteed.
+
 # Bolt Documentation
 
 Welcome to **Bolt**, a fast and powerful PHP API framework designed to streamline API development. Bolt offers a clean architecture, essential libraries, and tools for building scalable and efficient APIs. Whether you're setting up routes, validating requests, managing databases, or handling file uploads, Bolt provides the foundation you need.
